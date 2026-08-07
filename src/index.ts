@@ -7,7 +7,7 @@ import type { Base64ImageSource, ContentBlockParam } from "@anthropic-ai/sdk/res
 import { Type } from "typebox";
 import { Text } from "@earendil-works/pi-tui";
 import { createSession, deleteSession, repairToolPairing } from "cc-session-io";
-import { appendFileSync, mkdirSync, realpathSync, statSync } from "fs";
+import { appendFileSync, mkdirSync, readFileSync, realpathSync, statSync } from "fs";
 import { homedir } from "os";
 import { dirname, join } from "path";
 import { PROVIDER_ID, messageContentToText, convertPiMessages } from "./convert.js";
@@ -1450,13 +1450,34 @@ function streamClaudeAgentSdk(model: Model<any>, context: Context, options?: Sim
 	// describes pi's tools and harness and would fight what Claude Code expects.
 	// AGENTS.md and the skills block are carried over either way, so skills still
 	// resolve and project context still applies.
+	// systemPromptFile wins over systemPrompt. It exists because pi's SYSTEM.md is
+	// global: it replaces the prompt for EVERY configured provider, dropping pi's
+	// tool list, guidelines and documentation block for all of them. A file named
+	// here reaches this bridge only, so a machine running both this and, say,
+	// OpenRouter keeps pi's default prompt intact for the other provider.
+	// Unreadable or empty falls through rather than sending an empty prompt.
+	const systemPromptFile = providerSettings.systemPromptFile;
+	const fileBase = (() => {
+		if (!systemPromptFile) return undefined;
+		const resolved = systemPromptFile.startsWith("~/") ? join(homedir(), systemPromptFile.slice(2)) : systemPromptFile;
+		try {
+			const text = readFileSync(resolved, "utf-8").trim();
+			if (text.length > 0) return text;
+			debug(`provider: systemPromptFile is empty, ignoring: ${resolved}`);
+		} catch (error) {
+			debug(`provider: systemPromptFile unreadable, ignoring: ${resolved}`, error);
+		}
+		return undefined;
+	})();
+
 	const systemPromptMode = providerSettings.systemPrompt ?? "preset";
 	const customBase =
-		systemPromptMode === "preset"
+		fileBase ??
+		(systemPromptMode === "preset"
 			? undefined
 			: systemPromptMode === "replace"
 				? userSystemPrompt.custom
-				: systemPromptMode;
+				: systemPromptMode);
 	const systemPromptOption = customBase
 		? [customBase, ...bridgeAppends, userSystemPrompt.append]
 				.filter((part): part is string => Boolean(part))

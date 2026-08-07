@@ -34,6 +34,17 @@ export interface Config {
 		 * AGENTS.md and the skills block are appended in every mode.
 		 */
 		systemPrompt?: "preset" | "replace" | string;
+		/**
+		 * Path to a file holding the prompt, taking precedence over systemPrompt.
+		 * Supports a leading "~/".
+		 *
+		 * Prefer this over pi's SYSTEM.md when other providers are configured:
+		 * SYSTEM.md replaces pi's prompt for EVERY provider, dropping pi's tool
+		 * list, guidelines and documentation block for all of them. A file named
+		 * here applies to this bridge alone. Unreadable or empty falls through to
+		 * systemPrompt, so a bad path degrades instead of sending nothing.
+		 */
+		systemPromptFile?: string;
 		appendSystemPrompt?: boolean;
 		settingSources?: SettingSource[];
 		strictMcpConfig?: boolean;
