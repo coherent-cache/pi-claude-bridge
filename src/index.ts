@@ -18,6 +18,7 @@ import { extractAllToolResults as _extractAllToolResults, type McpResult } from 
 import { QueryContext, ctx } from "./query-state.js";
 import { makePromptStream, userMessage, type PromptStream } from "./prompt-stream.js";
 import { claudeCodeSettings, loadConfig, markStartupNoticeShown, type Config } from "./config.js";
+import { dropMapping, lookupMapping, recordMapping } from "./session-map.js";
 import { extractAgentsAppend } from "./agents-md.js";
 import { createToolServer } from "./mcp-server.js";
 import { buildActionSummary, type ToolCallState } from "./askclaude-ui.js";
@@ -640,6 +641,9 @@ function syncSharedSession(
 	session.save();
 	verifyWrittenSession(session.jsonlPath, session.sessionId, session.messages.length, cwd);
 	sharedSession = { sessionId: session.sessionId, cursor: priorMessages.length, cwd };
+	// Survives a restart, so resuming this pi session rebuilds this same Claude
+	// Code session rather than minting a new one and orphaning this file.
+	recordMapping(piSessionId, session.sessionId, cwd);
 	if (previousSessionId === undefined) {
 		debug(`Case 2: first turn with ${priorMessages.length} prior messages → session ${session.sessionId.slice(0, 8)}, ${session.messages.length} records`);
 	} else if (preserveId) {
@@ -663,6 +667,12 @@ export const __test = {
 	},
 	getSharedSession() {
 		return sharedSession;
+	},
+	setPiSessionId(id: string | null) {
+		piSessionId = id;
+	},
+	getPiSessionId() {
+		return piSessionId;
 	},
 	syncSharedSession,
 	extractUserPromptBlocks,
@@ -733,6 +743,10 @@ function mapToolArgs(
 // Global (not query state):
 let piUI: ExtensionUIContext | null = null;
 let piMode: ExtensionContext["mode"] | null = null;
+// pi's session id for the active conversation. Used to persist the mapping to
+// the Claude Code session backing it, so a resume reuses that session instead
+// of orphaning it. Null until pi reports a session.
+let piSessionId: string | null = null;
 const activeQueryContexts = new Set<QueryContext>();
 
 // `plan` is the one setting whose default silently costs the user something (no
@@ -1816,8 +1830,29 @@ export default function (pi: ExtensionAPI) {
 	pi.on("session_start", (event, ctx) => {
 		piUI = ctx.ui;
 		piMode = ctx.mode;
-		if (event.reason === "new" || event.reason === "resume" || event.reason === "fork") {
+		piSessionId = ctx.sessionManager.getSessionId() ?? null;
+
+		if (event.reason === "new" || event.reason === "fork") {
+			// A genuinely different conversation: forget the mapping so it cannot
+			// adopt the previous session's Claude Code file.
 			clearSession(`session_start:${event.reason}`);
+			dropMapping(piSessionId);
+			return;
+		}
+
+		// "resume", "startup" and "reload" all continue an existing conversation,
+		// so re-adopt the Claude Code session already backing it. Marked
+		// needsRebuild so the next turn rewrites that file from pi's history
+		// rather than trusting a cursor from a previous process. The content is
+		// rebuilt either way; reusing the id is what stops the previous file
+		// being orphaned in ~/.claude/projects on every resume.
+		clearSession(`session_start:${event.reason}`);
+		const mapped = lookupMapping(piSessionId);
+		if (mapped) {
+			sharedSession = { sessionId: mapped.sessionId, cursor: 0, cwd: mapped.cwd, needsRebuild: true };
+			debug(
+				`session_start:${event.reason}: re-adopted CC session ${mapped.sessionId.slice(0, 8)} for pi session ${piSessionId?.slice(0, 8) ?? "?"}`,
+			);
 		}
 	});
 	// `--system-prompt` replaces pi's default rather than adding to it, but Claude
