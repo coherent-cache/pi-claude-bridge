@@ -24,6 +24,27 @@ export interface Config {
 	};
 	/** Low-level Claude Agent SDK plumbing. Most users won't need these. */
 	provider?: {
+		/**
+		 * Which system prompt Claude Code receives.
+		 * "preset" (default) - the built-in claude_code preset (~8k tokens).
+		 * "replace"          - use the user's own prompt (--system-prompt / SYSTEM.md)
+		 *                      in place of the preset, matching pi's SYSTEM.md
+		 *                      semantics. Falls back to the preset if none is set.
+		 * any other string   - that string, used as the prompt.
+		 * AGENTS.md and the skills block are appended in every mode.
+		 */
+		systemPrompt?: "preset" | "replace" | string;
+		/**
+		 * Path to a file holding the prompt, taking precedence over systemPrompt.
+		 * Supports a leading "~/".
+		 *
+		 * Prefer this over pi's SYSTEM.md when other providers are configured:
+		 * SYSTEM.md replaces pi's prompt for EVERY provider, dropping pi's tool
+		 * list, guidelines and documentation block for all of them. A file named
+		 * here applies to this bridge alone. Unreadable or empty falls through to
+		 * systemPrompt, so a bad path degrades instead of sending nothing.
+		 */
+		systemPromptFile?: string;
 		appendSystemPrompt?: boolean;
 		settingSources?: SettingSource[];
 		strictMcpConfig?: boolean;
