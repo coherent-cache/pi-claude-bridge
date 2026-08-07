@@ -84,6 +84,12 @@ Config: `~/.pi/agent/claude-bridge.json` (global) or the project Pi config direc
 - `plan` (default `"pro"`) — set to `"max"` for Max (or Team Premium/Enterprise) to enable Opus 4.6 with 1M context. If it's unset, the first interactive session points this out once, then records `startupNoticeShown` (the date, `YYYY-MM-DD`) in the global config so it doesn't nag again.
 - `longContextExtraUsage` — set to `true` to enable 1M models that cost money through Extra Usage. It enables Sonnet 4.6 with 1M on every plan and Opus 4.6 with 1M on Pro. Not needed for Opus 4.7 or 4.8.
 - `appendSystemPrompt` — append pi's project context files (global and ancestor `AGENTS.md` / `CLAUDE.md`) and skills (default `true`)
+- `systemPrompt` — which system prompt Claude Code receives (default `"preset"`)
+  - `"preset"` — Claude Code's built-in `claude_code` preset, with your prompt appended after it
+  - `"replace"` — use your own prompt (`--system-prompt`, `.pi/SYSTEM.md`, `~/.pi/agent/SYSTEM.md`) **instead of** the preset, matching pi's own `SYSTEM.md` semantics where `SYSTEM.md` replaces and `APPEND_SYSTEM.md` appends. Falls back to the preset when you haven't set one, so it's safe to leave on.
+  - any other string — that string, used as the prompt.
+
+  `AGENTS.md` and the skills block are appended in every mode, so skills and project context keep working. The preset costs roughly 8k tokens per request; replacing it measured ~3.5k vs ~7.4k on a trivial turn here, with identical tool results and an identical skills list. Note that pi's *assembled* system prompt is deliberately not an option — it describes pi's own tools and harness and would fight what Claude Code expects.
 - `settingSources` — CC filesystem settings to load; only applied when `appendSystemPrompt: false`
 - `strictMcpConfig` — block MCP servers from `~/.claude.json` / `.mcp.json` (default `true`). Cloud MCP (Gmail/Drive via claude.ai OAuth) is always blocked.
 - `autoMemoryEnabled` — enable Claude Code's auto-memory system (default `false`)

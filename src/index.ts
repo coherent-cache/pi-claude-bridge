@@ -1429,12 +1429,43 @@ function streamClaudeAgentSdk(model: Model<any>, context: Context, options?: Sim
 	const appendSystemPrompt = providerSettings.appendSystemPrompt !== false;
 	const agentsAppend = appendSystemPrompt ? extractAgentsAppend(cwd) : undefined;
 	const skillsAppend = appendSystemPrompt ? extractSkillsBlock(context.systemPrompt) : undefined;
+	// Context the bridge injects on its own. Kept separate from the user's text so
+	// it can be carried over when the preset is replaced.
+	const bridgeAppends = [agentsAppend, skillsAppend].filter((part): part is string => Boolean(part));
 	// Last, so the user's own instructions win over anything the bridge adds, and
 	// ungated by appendSystemPrompt: that setting suppresses context the bridge
 	// injects on its own, not what the user explicitly asked for.
-	const appendParts = [agentsAppend, skillsAppend, userSystemPrompt.custom, userSystemPrompt.append]
+	const appendParts = [...bridgeAppends, userSystemPrompt.custom, userSystemPrompt.append]
 		.filter((part): part is string => Boolean(part));
 	const systemPromptAppend = appendParts.length > 0 ? appendParts.join("\n\n") : undefined;
+
+	// The claude_code preset costs ~8k tokens on every request. Two ways to skip it:
+	//   "replace" — honour pi's own SYSTEM.md semantics, where SYSTEM.md replaces the
+	//               default prompt and APPEND_SYSTEM.md appends. The bridge otherwise
+	//               appends both, so a user who replaced pi's prompt still pays for a
+	//               preset they opted out of. Falls back to the preset when the user
+	//               set no custom prompt, so the setting is safe to leave on.
+	//   <string>  — an explicit prompt, for callers who want one regardless of pi.
+	// pi's assembled context.systemPrompt is deliberately NOT an option here: it
+	// describes pi's tools and harness and would fight what Claude Code expects.
+	// AGENTS.md and the skills block are carried over either way, so skills still
+	// resolve and project context still applies.
+	const systemPromptMode = providerSettings.systemPrompt ?? "preset";
+	const customBase =
+		systemPromptMode === "preset"
+			? undefined
+			: systemPromptMode === "replace"
+				? userSystemPrompt.custom
+				: systemPromptMode;
+	const systemPromptOption = customBase
+		? [customBase, ...bridgeAppends, userSystemPrompt.append]
+				.filter((part): part is string => Boolean(part))
+				.join("\n\n")
+		: {
+				type: "preset" as const,
+				preset: "claude_code" as const,
+				append: systemPromptAppend ? systemPromptAppend : undefined,
+			};
 
 	// MCP auto-loading suppression: CC reads MCP servers from ~/.claude.json (top-level
 	// + per-project) and .mcp.json. Since pi executes tools (not CC), those are pure
@@ -1479,10 +1510,7 @@ function streamClaudeAgentSdk(model: Model<any>, context: Context, options?: Sim
 		permissionMode: "bypassPermissions",
 		includePartialMessages: true,
 		settings: claudeCodeSettings(providerSettings),
-		systemPrompt: {
-			type: "preset", preset: "claude_code",
-			append: systemPromptAppend ? systemPromptAppend : undefined,
-		},
+		systemPrompt: systemPromptOption,
 		extraArgs,
 		...(effort ? { effort } : {}),
 		...(settingSources ? { settingSources } : {}),
