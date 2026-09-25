@@ -64,8 +64,49 @@ or error text. `opus-4-6[1m]` was confirmed 429 via a separate one-off dump;
 "Fable 5.1 requires usage credits" and the opus-5-5 rows returned 429 "You've
 hit your session limit" — no `modelUsage` was served. The same ids on CC 2.1.141
 (SDK 0.2.141) failed with 400 "does not support this model; version
-2.1.251/2.1.280", so those minimums are confirmed. Re-run
-`node diag/context-size.mjs max` after the session limit resets and fill these cells.
+2.1.251/2.1.280", so those minimums are confirmed. Superseded by the 2026-09-25
+re-measurement below.
+
+## 2026-09-25 re-measurement (Max, credits off, SDK 0.3.281 / CC 2.1.281)
+
+Full re-run of every model, bare and `[1m]`. Raw:
+`.test-output/context-size/max-2026-09-25T14-37-24-297Z.{json,md}`.
+
+| requested id              | served context | note |
+|---------------------------|----------------|------|
+| `claude-fable-5-1`        | 429            | "Fable 5.1 requires usage credits" |
+| `claude-fable-5-1[1m]`   | 429            | same |
+| `claude-opus-5-5`         | **1M**         | bare serves 1M — the bridge requests bare |
+| `claude-opus-5-5[1m]`    | 1M             | |
+| `claude-opus-5`           | **1M**         | was 200K bare in June — behavior changed |
+| `claude-opus-5[1m]`      | 1M             | |
+| `claude-opus-4-8`         | **1M**         | was 200K bare in June |
+| `claude-opus-4-8[1m]`    | 1M             | |
+| `claude-opus-4-7`         | 1M             | unchanged |
+| `claude-opus-4-7[1m]`    | 1M             | |
+| `claude-opus-4-6`         | 200K           | unchanged |
+| `claude-opus-4-6[1m]`    | 429            | was 1M on Max in June — `[1m]` is now credit-gated |
+| `claude-fable-5`          | 429            | "Fable 5 requires usage credits" — new since June |
+| `claude-fable-5[1m]`     | 429            | same |
+| `claude-sonnet-5`         | **1M**         | was 200K bare in June |
+| `claude-sonnet-5[1m]`    | 1M             | |
+| `claude-sonnet-4-6`       | 200K           | unchanged |
+| `claude-sonnet-4-6[1m]`  | 429            | was 1M with credits in June — now credit-gated |
+| `claude-haiku-4-5`        | 200K           | unchanged |
+| `claude-haiku-4-5[1m]`   | 400            | "authentication style is incompatible" |
+
+Policy-relevant deltas vs the June table:
+
+- **Both Fable models are credit-gated** on this Max account — 429 regardless
+  of `[1m]`. Not a bridge bug; enable usage credits on the Claude account or
+  pick another model.
+- **opus-5 / opus-4-8 / sonnet-5 now serve 1M bare** on Max. The bridge still
+  requests `[1m]` for them, which also serves 1M today — left as-is since Pro
+  behavior is unmeasured and the suffix is harmless while it works.
+- **`[1m]` became credit-gated for opus-4-6 and sonnet-4-6** (was 1M on Max in
+  June). The bridge's plan-aware `[1m]` requests for these two now 429 on a
+  credits-off account — the `plan`/`longContextExtraUsage` settings no longer
+  rescue them. Not changed here; flagged for a follow-up.
 
 ## Error shapes
 

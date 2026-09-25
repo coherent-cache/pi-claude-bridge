@@ -2,7 +2,7 @@
 
 ## Unreleased
 
-- **Add: claude-fable-5-1 and claude-opus-5-5 models** — Anthropic's Claude Fable 5.1 and Opus 5.5 are now selectable via `/model`. The `fable` and `opus` shortcuts resolve to them (first-listed in the picker). Both request the `[1m]` variant at 1M context following the 5-series pattern; ids verified accepted by the bundled CC 2.1.281, but served context windows are not yet measured — probe pending a session-limit reset (see diag/CONTEXT-SIZE.md). Requires pi-ai >=0.87.1 for the `claude-fable-5-1`/`claude-opus-5-5` catalog entries.
+- **Add: claude-fable-5-1 and claude-opus-5-5 models** — Anthropic's Claude Fable 5.1 and Opus 5.5 are now selectable via `/model`. The `fable` and `opus` shortcuts resolve to them (first-listed in the picker). Measured on Max (2026-09-25, see diag/CONTEXT-SIZE.md): Opus 5.5 serves 1M on the bare id, so the bridge requests it bare; Fable 5.1 is requested as `[1m]` but — like Fable 5 — returns 429 "requires usage credits" on a credits-off account, so it needs usage credits enabled on the Claude account. Requires pi-ai >=0.87.1 for the `claude-fable-5-1`/`claude-opus-5-5` catalog entries.
 - **Bump: @anthropic-ai/claude-agent-sdk 0.2.141 → 0.3.281** — the bundled Claude Code 2.1.141 rejected the new model ids ("does not support this model"; fable-5.1 needs CC >=2.1.251, opus-5.5 >=2.1.280). 0.3.281 bundles CC 2.1.281.
 - **Bump: @anthropic-ai/sdk ^0.73.0 → ^0.93.0** — peer requirement of the new agent SDK.
 - **Fix: mirror Pi context-file instructions** — Claude Code now receives the same global and hierarchical `AGENTS.md` / `CLAUDE.md` files that Pi loads, in the same order, rather than only the nearest `AGENTS.md`.

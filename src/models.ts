@@ -40,13 +40,15 @@ const ONE_M_CONTEXT = 1_000_000;
 // not, and [1m] entitlement differs by model. See diag/CONTEXT-SIZE.md.
 export function resolveClaudeCodeRuntimeModel(modelId: string, settings: LongContextSettings): ClaudeCodeRuntimeModel {
 	switch (modelId) {
-		// Fable 5.1 and Opus 5.5: ids verified accepted by CC 2.1.281 (400 on
-		// 2.1.141, which this bridge previously bundled). [1m]/1M follows the
-		// 5-series pattern; not yet measured — see diag/CONTEXT-SIZE.md.
+		// Fable 5.1: 429 "requires usage credits" on Max without overage,
+		// bare and [1m] alike (measured 2026-09-25). Keep [1m], matching the
+		// id form Claude Code users configure for this model.
 		case "claude-fable-5-1":
 			return { cliModelId: "claude-fable-5-1[1m]", contextWindow: ONE_M_CONTEXT };
+		// Opus 5.5: bare serves 1M on Max (measured 2026-09-25) — no [1m]
+		// suffix needed, unlike the June 5-series measurements.
 		case "claude-opus-5-5":
-			return { cliModelId: "claude-opus-5-5[1m]", contextWindow: ONE_M_CONTEXT };
+			return { cliModelId: "claude-opus-5-5", contextWindow: ONE_M_CONTEXT };
 		case "claude-opus-5":
 			return { cliModelId: "claude-opus-5[1m]", contextWindow: ONE_M_CONTEXT };
 		case "claude-opus-4-8":

@@ -75,7 +75,7 @@ describe("MODELS projection", () => {
 describe("Claude Code runtime model policy", () => {
 	it("uses measured Pro defaults", () => {
 		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-fable-5-1", PRO), { cliModelId: "claude-fable-5-1[1m]", contextWindow: 1000000 });
-		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-5-5", PRO), { cliModelId: "claude-opus-5-5[1m]", contextWindow: 1000000 });
+		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-5-5", PRO), { cliModelId: "claude-opus-5-5", contextWindow: 1000000 });
 		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-5", PRO), { cliModelId: "claude-opus-5[1m]", contextWindow: 1000000 });
 		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-4-8", PRO), { cliModelId: "claude-opus-4-8[1m]", contextWindow: 1000000 });
 		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-4-7", PRO), { cliModelId: "claude-opus-4-7", contextWindow: 1000000 });
@@ -86,7 +86,7 @@ describe("Claude Code runtime model policy", () => {
 
 	it("plan max only changes Opus 4.6", () => {
 		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-fable-5-1", MAX), { cliModelId: "claude-fable-5-1[1m]", contextWindow: 1000000 });
-		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-5-5", MAX), { cliModelId: "claude-opus-5-5[1m]", contextWindow: 1000000 });
+		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-5-5", MAX), { cliModelId: "claude-opus-5-5", contextWindow: 1000000 });
 		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-5", MAX), { cliModelId: "claude-opus-5[1m]", contextWindow: 1000000 });
 		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-4-8", MAX), { cliModelId: "claude-opus-4-8[1m]", contextWindow: 1000000 });
 		assert.deepEqual(resolveClaudeCodeRuntimeModel("claude-opus-4-7", MAX), { cliModelId: "claude-opus-4-7", contextWindow: 1000000 });
@@ -110,7 +110,7 @@ describe("claudeCodeModelId", () => {
 
 	it("returns the measured SDK request id", () => {
 		assert.equal(claudeCodeModelId(find(models, "claude-fable-5-1"), PRO), "claude-fable-5-1[1m]");
-		assert.equal(claudeCodeModelId(find(models, "claude-opus-5-5"), PRO), "claude-opus-5-5[1m]");
+		assert.equal(claudeCodeModelId(find(models, "claude-opus-5-5"), PRO), "claude-opus-5-5");
 		assert.equal(claudeCodeModelId(find(models, "claude-opus-5"), PRO), "claude-opus-5[1m]");
 		assert.equal(claudeCodeModelId(find(models, "claude-opus-4-8"), PRO), "claude-opus-4-8[1m]");
 		assert.equal(claudeCodeModelId(find(models, "claude-opus-4-7"), PRO), "claude-opus-4-7");
@@ -195,6 +195,6 @@ describe("resolveModel", () => {
 		const oneMModels = buildModels(MODEL_IDS_IN_ORDER.map(oneM));
 		const model = resolveModel(oneMModels, "opus");
 		assert.equal(model.id, "claude-opus-5-5");
-		assert.equal(claudeCodeModelId(model, PRO), "claude-opus-5-5[1m]");
+		assert.equal(claudeCodeModelId(model, PRO), "claude-opus-5-5");
 	});
 });

@@ -27,6 +27,8 @@ Use `/model` to select `claude-bridge/claude-fable-5-1`, `claude-bridge/claude-o
 
 Behind the scenes, pi's tools are bridged to Claude Code but it should all work like normal in pi. Bash commands get a 120-second default timeout (matching Claude Code's default) since pi's bash has no timeout by default. Skills in pi are copied over to Claude Code's system prompt so should work as they would with any other pi provider. Steering works mid-turn: a message sent while Claude is running a tool reaches it at that tool boundary, not after the whole turn finishes.
 
+**Usage credits:** Fable 5 and Fable 5.1 return 429 "requires usage credits" unless usage credits are enabled on your Claude account (measured 2026-09-25 on Max). All other models work on a plain subscription.
+
 **1M Context:** Fable 5.1, Opus 5.5, Opus 5, Opus 4.8, and Opus 4.7 get 1M context by default. Opus 4.6 only gets 1M if you're on a Max plan or pay for Extra Usage. Sonnet 4.6 only gets 1M if you pay for Extra Usage. You will need to set `provider.plan` and/or `provider.longContextExtraUsage` for 1M context in Opus 4.6/Sonnet 4.6 as described in [Configuration](#configuration).
 
 ## AskClaude Tool
