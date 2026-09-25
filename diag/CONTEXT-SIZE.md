@@ -59,6 +59,14 @@ error-field capture; its three rejected `[1m]` rows have no recorded HTTP status
 or error text. `opus-4-6[1m]` was confirmed 429 via a separate one-off dump;
 `sonnet-4-6[1m]` and `haiku-4-5[1m]` are assumed the same by analogy.
 
+‡ **Ids accepted, context not yet measured.** Probed 2026-09-24 under agent SDK
+0.3.281 (CC 2.1.281, `settingSources: []`): the fable-5-1 rows returned 429
+"Fable 5.1 requires usage credits" and the opus-5-5 rows returned 429 "You've
+hit your session limit" — no `modelUsage` was served. The same ids on CC 2.1.141
+(SDK 0.2.141) failed with 400 "does not support this model; version
+2.1.251/2.1.280", so those minimums are confirmed. Re-run
+`node diag/context-size.mjs max` after the session limit resets and fill these cells.
+
 ## Error shapes
 
 Rejected `[1m]` turns surface in the SDK message stream, not `result.errors[]`

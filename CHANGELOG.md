@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- **Add: claude-fable-5-1 and claude-opus-5-5 models** — Anthropic's Claude Fable 5.1 and Opus 5.5 are now selectable via `/model`. The `fable` and `opus` shortcuts resolve to them (first-listed in the picker). Both request the `[1m]` variant at 1M context following the 5-series pattern; ids verified accepted by the bundled CC 2.1.281, but served context windows are not yet measured — probe pending a session-limit reset (see diag/CONTEXT-SIZE.md). Requires pi-ai >=0.87.1 for the `claude-fable-5-1`/`claude-opus-5-5` catalog entries.
+- **Bump: @anthropic-ai/claude-agent-sdk 0.2.141 → 0.3.281** — the bundled Claude Code 2.1.141 rejected the new model ids ("does not support this model"; fable-5.1 needs CC >=2.1.251, opus-5.5 >=2.1.280). 0.3.281 bundles CC 2.1.281.
+- **Bump: @anthropic-ai/sdk ^0.73.0 → ^0.93.0** — peer requirement of the new agent SDK.
 - **Fix: mirror Pi context-file instructions** — Claude Code now receives the same global and hierarchical `AGENTS.md` / `CLAUDE.md` files that Pi loads, in the same order, rather than only the nearest `AGENTS.md`.
 - **Add: mid-turn steering** — a steer sent while a tool was running used to be stashed and replayed as a follow-up after Claude's whole turn finished. The prompt is now a long-lived streaming generator and the steer is written to CC's stdin (`priority: "next"`) before the tool result is released, so CC drains it at that tool boundary and acts on it in the same turn.
 - **Add: one-time plan notice** — `provider.plan` defaults to `"pro"`, so Max subscribers silently lost Opus at 1M context. Notifies once, on the first bridge query of an interactive session, when `plan` is unset.
