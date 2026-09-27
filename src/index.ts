@@ -638,6 +638,17 @@ function syncSharedSession(
 		...(modelId ? { model: modelId } : {}),
 	});
 	convertAndImportMessages(session, priorMessages, customToolNameToSdk);
+	if (session.messages.length === 0) {
+		// Nothing imported — e.g. a first turn, whose only prior is the system
+		// message. save() with zero pending records writes no file, and current
+		// CC errors on resuming a session with no transcript ("No conversation
+		// found with session ID") where older CC silently started fresh. Start
+		// without resume; the next turn rebuilds with real records. If we wiped
+		// a prior transcript above, drop the handle — nothing valid remains.
+		debug(`syncResult: path=rebuild-empty priors=${priorMessages.length} → no resume (0 records)`);
+		if (previousSessionId !== undefined) sharedSession = null;
+		return { sessionId: null };
+	}
 	session.save();
 	verifyWrittenSession(session.jsonlPath, session.sessionId, session.messages.length, cwd);
 	sharedSession = { sessionId: session.sessionId, cursor: priorMessages.length, cwd };

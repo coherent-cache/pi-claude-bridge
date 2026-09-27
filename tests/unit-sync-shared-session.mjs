@@ -53,4 +53,46 @@ describe("syncSharedSession", () => {
 			rmSync(cwd, { recursive: true, force: true });
 		}
 	});
+
+	// Regression: CC >=2.1.281 errors on resuming a session whose transcript was
+	// never written ("No conversation found with session ID"). A first turn's
+	// only prior is the system message, which imports to zero records, and
+	// save() with zero pending records writes no file — so the sync must return
+	// no resume id and leave no session handle behind.
+	it("returns no resume when a first turn imports zero records", () => {
+		const cwd = mkdtempSync(join(tmpdir(), "sync-shared-session-"));
+		try {
+			const result = __test.syncSharedSession([
+				{ role: "system", content: "You are a test harness.", timestamp: Date.now() },
+				{ role: "user", content: "hi", timestamp: Date.now() },
+			], cwd);
+
+			assert.equal(result.sessionId, null, "zero imported records must not resume a transcript that was never written");
+			assert.equal(__test.getSharedSession(), null, "no session handle is recorded until a transcript exists");
+		} finally {
+			rmSync(cwd, { recursive: true, force: true });
+		}
+	});
+
+	it("drops the session handle when a rebuild wipes the transcript but imports zero records", () => {
+		const cwd = mkdtempSync(join(tmpdir(), "sync-shared-session-"));
+		try {
+			__test.setSharedSession({
+				sessionId: "22222222-2222-4222-8222-222222222222",
+				cursor: 10,
+				cwd,
+				needsRebuild: true,
+			});
+
+			const result = __test.syncSharedSession([
+				{ role: "system", content: "You are a test harness.", timestamp: Date.now() },
+				{ role: "user", content: "hi", timestamp: Date.now() },
+			], cwd);
+
+			assert.equal(result.sessionId, null);
+			assert.equal(__test.getSharedSession(), null, "the wiped session's handle must not survive — nothing valid remains to resume");
+		} finally {
+			rmSync(cwd, { recursive: true, force: true });
+		}
+	});
 });
